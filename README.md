@@ -81,7 +81,7 @@ Add the following to your `claude_desktop_config.json` (usually at `~/Library/Ap
       "args": [
         "run",
         "--directory",
-        "/absolute/path/to/google-mcp",
+        "/absolute/path/to/google-workspace-mcp",
         "google-mcp",
         "--transport",
         "stdio"
@@ -99,32 +99,32 @@ Restart Claude Desktop after saving the config. You should see the 14 Google Wor
 
 ### Gmail (6 tools)
 
-| Tool | Description |
-|---|---|
+| Tool               | Description                                                                |
+| ------------------ | -------------------------------------------------------------------------- |
 | `gmail_list_inbox` | List inbox emails (unread by default). Supports `max_results` and `query`. |
-| `gmail_search` | Search Gmail using a query string (e.g. `from:boss is:unread`). |
-| `gmail_read` | Read a message body and headers by message ID. |
-| `gmail_send` | Compose and send an email. Supports CC, BCC, HTML body. |
-| `gmail_reply` | Reply to a message (threading handled automatically). |
-| `gmail_draft` | Save an email as a draft without sending. |
+| `gmail_search`     | Search Gmail using a query string (e.g. `from:boss is:unread`).            |
+| `gmail_read`       | Read a message body and headers by message ID.                             |
+| `gmail_send`       | Compose and send an email. Supports CC, BCC, HTML body.                    |
+| `gmail_reply`      | Reply to a message (threading handled automatically).                      |
+| `gmail_draft`      | Save an email as a draft without sending.                                  |
 
 ### Calendar (5 tools)
 
-| Tool | Description |
-|---|---|
-| `calendar_list_events` | List upcoming events. Supports `days`, `calendar` filter, `timezone`. |
-| `calendar_read_event` | Read full details of a calendar event by ID. |
+| Tool                    | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `calendar_list_events`  | List upcoming events. Supports `days`, `calendar` filter, `timezone`.            |
+| `calendar_read_event`   | Read full details of a calendar event by ID.                                     |
 | `calendar_create_event` | Create a new event. Supports attendees, location, description, Google Meet link. |
 | `calendar_update_event` | Update specific fields of an event (patch semantics — only changed fields sent). |
-| `calendar_delete_event` | Permanently delete a calendar event. |
+| `calendar_delete_event` | Permanently delete a calendar event.                                             |
 
 ### Drive (3 tools)
 
-| Tool | Description |
-|---|---|
-| `drive_list_files` | List files and folders. Supports `folder_id` filter and Drive search `query`. |
-| `drive_read_metadata` | Read metadata for a file (name, MIME type, size, modified time, web link). |
-| `drive_upload_file` | Upload a local file. MIME type auto-detected from extension. |
+| Tool                  | Description                                                                   |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `drive_list_files`    | List files and folders. Supports `folder_id` filter and Drive search `query`. |
+| `drive_read_metadata` | Read metadata for a file (name, MIME type, size, modified time, web link).    |
+| `drive_upload_file`   | Upload a local file. MIME type auto-detected from extension.                  |
 
 ---
 
@@ -178,13 +178,13 @@ All tools return structured error dictionaries instead of raising exceptions:
 
 `gws` exit codes surfaced:
 
-| Code | Meaning |
-|---|---|
-| 1 | API error from Google |
-| 2 | Auth error — credentials missing or expired |
-| 3 | Validation — bad arguments |
-| 4 | Discovery error |
-| 5 | Internal error |
+| Code | Meaning                                     |
+| ---- | ------------------------------------------- |
+| 1    | API error from Google                       |
+| 2    | Auth error — credentials missing or expired |
+| 3    | Validation — bad arguments                  |
+| 4    | Discovery error                             |
+| 5    | Internal error                              |
 
 ---
 

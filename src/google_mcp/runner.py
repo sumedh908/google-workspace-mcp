@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 from typing import Any
 
@@ -54,7 +56,12 @@ def run_gws(
         GwsNotFoundError: gws binary is not on PATH.
         GwsError: gws exits non-zero, times out, or returns non-JSON stdout.
     """
-    cmd = ["gws"] + args
+    gws_bin = (
+        os.environ.get("GWS_PATH")
+        or shutil.which("gws")
+        or shutil.which("gws", path=os.path.expandvars(r"%APPDATA%\npm"))
+    ) or "gws"
+    cmd = [gws_bin] + args
     if dry_run:
         print("dry-run:", " ".join(cmd))
         return None
