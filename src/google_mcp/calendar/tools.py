@@ -25,11 +25,11 @@ def _gws_error_response(err: GwsError) -> dict[str, Any]:
 
 @router.tool()
 def calendar_list_events(
-    days: Annotated[int, Field(ge=1, le=365, description="Number of days ahead to show")] = 7,
-    calendar: Annotated[str, Field(description="Calendar name or ID (default: all)")] = "",
-    timezone: Annotated[str, Field(description="IANA timezone, e.g. America/New_York")] = "",
+    days: Annotated[int, Field(ge=1, le=365, description="Number of days ahead to fetch events for (1-365, default 7)")] = 7,
+    calendar: Annotated[str, Field(description="Calendar name or ID to filter to a single calendar (default: all calendars)")] = "",
+    timezone: Annotated[str, Field(description="IANA timezone for display, e.g. Asia/Kolkata, America/New_York (defaults to account timezone)")] = "",
 ) -> Any:
-    """List upcoming calendar events."""
+    """List upcoming calendar events across all calendars. Defaults to the next 7 days. Returns event titles, times, locations, and attendees."""
     args = ["calendar", "+agenda", "--format", "json", "--days", str(days)]
     if calendar:
         args += ["--calendar", calendar]
@@ -43,10 +43,10 @@ def calendar_list_events(
 
 @router.tool()
 def calendar_read_event(
-    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID")],
-    calendar_id: Annotated[str, Field(description="Calendar ID")] = _DEFAULT_CALENDAR,
+    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID — get this from calendar_list_events")],
+    calendar_id: Annotated[str, Field(description="Calendar ID the event belongs to (default: primary)")] = _DEFAULT_CALENDAR,
 ) -> Any:
-    """Read details of a specific calendar event."""
+    """Read full details of a calendar event — description, attendees, conferencing links, and recurrence rules."""
     params = json.dumps({"calendarId": calendar_id, "eventId": event_id})
     try:
         return run_gws(["calendar", "events", "get", "--params", params, "--format", "json"])
@@ -57,15 +57,15 @@ def calendar_read_event(
 @router.tool()
 def calendar_create_event(
     title: Annotated[str, Field(min_length=1, description="Event title/summary")],
-    start: Annotated[str, Field(min_length=1, description="Start time (RFC3339), e.g. 2026-06-17T09:00:00-07:00")],
-    end: Annotated[str, Field(min_length=1, description="End time (RFC3339)")],
-    location: Annotated[str, Field(description="Event location")] = "",
-    description: Annotated[str, Field(description="Event description")] = "",
-    attendees: Annotated[list[str], Field(description="Attendee email addresses")] = [],
-    add_meet: Annotated[bool, Field(description="Add a Google Meet link")] = False,
-    calendar_id: Annotated[str, Field(description="Calendar ID")] = _DEFAULT_CALENDAR,
+    start: Annotated[str, Field(min_length=1, description="Start time in RFC3339 with timezone offset, e.g. 2026-06-17T09:00:00+05:30")],
+    end: Annotated[str, Field(min_length=1, description="End time in RFC3339 with timezone offset, e.g. 2026-06-17T10:00:00+05:30")],
+    location: Annotated[str, Field(description="Event location (address, room name, or video link)")] = "",
+    description: Annotated[str, Field(description="Event description or agenda (plain text)")] = "",
+    attendees: Annotated[list[str], Field(description="List of attendee email addresses to invite")] = [],
+    add_meet: Annotated[bool, Field(description="Automatically add a Google Meet video conferencing link")] = False,
+    calendar_id: Annotated[str, Field(description="Calendar ID to create the event in (default: primary)")] = _DEFAULT_CALENDAR,
 ) -> Any:
-    """Create a new calendar event."""
+    """Create a new calendar event. Returns the event ID, Google Calendar link, and conference details if a Meet link was added."""
     args = [
         "calendar", "+insert",
         "--summary", title,
@@ -90,15 +90,15 @@ def calendar_create_event(
 
 @router.tool()
 def calendar_update_event(
-    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID to update")],
-    title: Annotated[str, Field(description="New event title")] = "",
-    start: Annotated[str, Field(description="New start time (RFC3339)")] = "",
-    end: Annotated[str, Field(description="New end time (RFC3339)")] = "",
-    location: Annotated[str, Field(description="New location")] = "",
-    description: Annotated[str, Field(description="New description")] = "",
-    calendar_id: Annotated[str, Field(description="Calendar ID")] = _DEFAULT_CALENDAR,
+    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID to update — get this from calendar_list_events")],
+    title: Annotated[str, Field(description="New event title (leave empty to keep existing)")] = "",
+    start: Annotated[str, Field(description="New start time in RFC3339, e.g. 2026-06-17T09:00:00+05:30 (leave empty to keep existing)")] = "",
+    end: Annotated[str, Field(description="New end time in RFC3339 (leave empty to keep existing)")] = "",
+    location: Annotated[str, Field(description="New location (leave empty to keep existing)")] = "",
+    description: Annotated[str, Field(description="New description (leave empty to keep existing)")] = "",
+    calendar_id: Annotated[str, Field(description="Calendar ID the event belongs to (default: primary)")] = _DEFAULT_CALENDAR,
 ) -> Any:
-    """Update specific fields of a calendar event (patch semantics — only changed fields)."""
+    """Patch a calendar event — only the fields you supply are updated, all others are left unchanged."""
     patch: dict[str, Any] = {}
     if title:
         patch["summary"] = title
@@ -128,10 +128,10 @@ def calendar_update_event(
 
 @router.tool()
 def calendar_delete_event(
-    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID to delete")],
-    calendar_id: Annotated[str, Field(description="Calendar ID")] = _DEFAULT_CALENDAR,
+    event_id: Annotated[str, Field(min_length=1, description="Calendar event ID to delete — get this from calendar_list_events")],
+    calendar_id: Annotated[str, Field(description="Calendar ID the event belongs to (default: primary)")] = _DEFAULT_CALENDAR,
 ) -> Any:
-    """Delete a calendar event permanently."""
+    """Permanently delete a calendar event. This cannot be undone."""
     params = json.dumps({"calendarId": calendar_id, "eventId": event_id})
     try:
         run_gws(["calendar", "events", "delete", "--params", params])
