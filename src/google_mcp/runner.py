@@ -71,6 +71,7 @@ def run_gws(
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",  # explicit UTF-8; text=True alone uses system locale on Windows
             timeout=timeout,
         )
     except FileNotFoundError as err:

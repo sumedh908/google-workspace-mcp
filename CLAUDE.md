@@ -49,6 +49,58 @@ Tools never raise. On `GwsError` they return a `dict` with `{"error": ..., "stde
 4. Add explicit guard checks (empty string, missing file) that return `{"error": ...}` — Pydantic `Field(min_length=1)` is not enforced when calling the function directly in tests.
 5. No changes needed in `server.py` — tools are picked up automatically via `mcp.mount`.
 
+### Tool description standard
+
+Every `@router.tool()` docstring must follow this structure (the docstring is what MCP surfaces to AI clients — completeness here directly affects tool selection quality):
+
+```
+<One-sentence purpose — what it does + what it returns.>
+
+Use: <when to call it>.
+Skip: <when not to — name the better alternative>.
+
+Returns: <compact shape, e.g. {id, name, mimeType}>
+Edges: <key edge cases as semicolon-separated inline list>.
+
+Example — <key params>: <compact output on one line>
+```
+
+Required criteria (all five must be present):
+1. **Purpose** — one sentence, includes what is returned
+2. **Input specs** — types/ranges/formats in `Field(description=...)` on every param
+3. **Use / Skip** — explicit when-to and when-not-to with named alternatives
+4. **Edges** — empty inputs, invalid IDs, boundary values, documented error shapes
+5. **Example** — at least one realistic `param=val` → `{output}` inline pair
+
+### Verifying tools after changes
+
+```bash
+# Confirm all tools import and register (no runtime errors)
+uv run python -c "
+import asyncio
+from google_mcp.gmail.tools import router as gmail
+from google_mcp.calendar.tools import router as cal
+from google_mcp.drive.tools import router as drv
+async def check():
+    tools = await gmail.list_tools() + await cal.list_tools() + await drv.list_tools()
+    print(f'{len(tools)} tools:', [t.name for t in tools])
+asyncio.run(check())
+"
+
+# Spot-check a specific tool's description as seen by MCP clients
+uv run python -c "
+import asyncio
+from google_mcp.gmail.tools import router as gmail
+async def check():
+    tools = await gmail.list_tools()
+    t = next(x for x in tools if x.name == 'gmail_send')
+    print(t.description)
+asyncio.run(check())
+"
+```
+
+Expected: 14 tools across gmail (6), calendar (5), drive (3).
+
 ### FastMCP version note
 
 FastMCP 3.x uses `mcp.mount(sub_server, namespace=...)` (not `prefix=` which is deprecated). HTTP transport is started via `mcp.run_http_async(transport="sse", ...)`, not `mcp.run()`.
